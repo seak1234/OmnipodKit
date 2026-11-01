@@ -44,12 +44,11 @@ struct MessagePacket {
         let sequenceNumber = payloadData[4]
         let ackNumber = payloadData[5]
         let size = (UInt16(payloadData[6]) << 3) | (UInt16(payloadData[7]) >> 5)
-        guard payload.count >= (Int(size) + MessagePacket.HEADER_SIZE) else {
+        let hasTag = (type == .ENCRYPTED || type == .ENCRYPTED_SIGNED)
+        let payloadEnd = HEADER_SIZE + Int(size) + (hasTag ? 8 : 0)
+        guard payload.count >= payloadEnd else {
             throw PodProtocolError.couldNotParseMessageException("Wrong payload size")
         }
-
-        let hasTag = (type == .ENCRYPTED || type == .ENCRYPTED_SIGNED)
-        let payloadEnd = Int(16 + size + (hasTag ? 8 : 0))
 
         return MessagePacket(
             type: type,

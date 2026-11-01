@@ -11,6 +11,28 @@ import XCTest
 @testable import OmnipodKit
 
 class MessagePacketTests: XCTestCase {
+
+    func testEncryptedPacketsRejectEveryTruncationIncludingMissingAuthenticationTag() throws {
+        for type in [MessageType.ENCRYPTED, .ENCRYPTED_SIGNED] {
+            let packet = MessagePacket(type: type, source: 1, destination: 2,
+                                       payload: Data(repeating: 0x42, count: 32), sequenceNumber: 1)
+            let encoded = packet.asData()
+            for count in 0..<encoded.count {
+                XCTAssertThrowsError(try MessagePacket.parse(payload: Data(encoded.prefix(count))),
+                                     "type \(type), length \(count)")
+            }
+            let parsed = try MessagePacket.parse(payload: encoded)
+            XCTAssertEqual(parsed.type, type)
+            XCTAssertEqual(parsed.payload, packet.payload)
+        }
+    }
+
+    func testUnencryptedPacketDoesNotRequireAuthenticationTag() throws {
+        let packet = MessagePacket(type: .SESSION_ESTABLISHMENT, source: 1, destination: 2,
+                                   payload: Data([0x01]), sequenceNumber: 1)
+        let parsed = try MessagePacket.parse(payload: packet.asData())
+        XCTAssertEqual(parsed.payload, packet.payload)
+    }
     
     let payloadString = "54,57,11,01,07,00,03,40,08,20,2e,a8,08,20,2e,a9,ab,35,d8,31,60,9b,b8,fe,3a,3b,de,5b,18,37,24,9a,16,db,f8,e4,d3,05,e9,75,dc,81,7c,37,07,cc,41,5f,af,8a".replacingOccurrences(of: ",", with: "")
     

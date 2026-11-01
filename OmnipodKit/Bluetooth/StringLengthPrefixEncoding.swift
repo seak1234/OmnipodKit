@@ -32,7 +32,7 @@ final class StringLengthPrefixEncoding {
             }
             remaining = remaining.subdata(in: key.count..<remaining.count)
             let length = Int(remaining[0...].toBigEndian(UInt16.self))
-            guard remaining.count >= length else {
+            guard remaining.count >= LENGTH_BYTES + length else {
                 throw PodProtocolError.messageIOException("Payload too short: \(payload)")
             }
             ret[index] = remaining.subdata(in: LENGTH_BYTES..<LENGTH_BYTES + length)
